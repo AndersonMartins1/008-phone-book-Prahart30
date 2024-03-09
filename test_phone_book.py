@@ -7,14 +7,16 @@ import pytest
 
 @pytest.fixture
 def no_db():
+    # Use contextlib.suppress to suppress exceptions when trying to delete the database file
     with contextlib.suppress(Exception):
         os.unlink("directory.db")
 
 def run_cmd(cmd):
+    # Split the command into a list of arguments
     cmd = cmd.split()
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    ret = p.wait()
-    return ret, p.stdout.read().decode("ascii").strip()
+    # Use subprocess.run instead of Popen to simplify code and handle STDOUT and STDERR automatically
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    return p.returncode, p.stdout.strip()
 
 
 def test_list_without_db(no_db):
@@ -33,12 +35,10 @@ def test_delete_without_db(no_db):
     assert op == "Couldn't open database file: No such file or directory"
 
 def test_adding_listing(no_db):
-    exit_status, _ = run_cmd("./phone_book add john 1234567890")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add jack 0987654321")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add james 5432167890")
-    assert exit_status == 0
+    # Use subprocess.run to simplify code
+    subprocess.run(["./phone_book", "add", "john", "1234567890"], check=True)
+    subprocess.run(["./phone_book", "add", "jack", "0987654321"], check=True)
+    subprocess.run(["./phone_book", "add", "james", "5432167890"], check=True)
 
     exit_status, op = run_cmd("./phone_book list")
     assert exit_status == 0
@@ -49,12 +49,9 @@ Total entries :  3"""
     assert (op == expected)
 
 def test_adding_searching_found(no_db):
-    exit_status, _ = run_cmd("./phone_book add john 1234567890")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add jack 0987654321")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add james 5432167890")
-    assert exit_status == 0
+    subprocess.run(["./phone_book", "add", "john", "1234567890"], check=True)
+    subprocess.run(["./phone_book", "add", "jack", "0987654321"], check=True)
+    subprocess.run(["./phone_book", "add", "james", "5432167890"], check=True)
 
     exit_status, op = run_cmd("./phone_book search john")
     assert exit_status == 0
@@ -62,12 +59,9 @@ def test_adding_searching_found(no_db):
     assert (op == expected)
 
 def test_adding_searching_notfound(no_db):
-    exit_status, _ = run_cmd("./phone_book add john 1234567890")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add jack 0987654321")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add james 5432167890")
-    assert exit_status == 0
+    subprocess.run(["./phone_book", "add", "john", "1234567890"], check=True)
+    subprocess.run(["./phone_book", "add", "jack", "0987654321"], check=True)
+    subprocess.run(["./phone_book", "add", "james", "5432167890"], check=True)
 
     exit_status, op = run_cmd("./phone_book search wick")
     assert exit_status == 1
@@ -75,12 +69,9 @@ def test_adding_searching_notfound(no_db):
     assert (op == expected)
 
 def test_adding_deleting_nonexistent(no_db):
-    exit_status, _ = run_cmd("./phone_book add john 1234567890")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add jack 0987654321")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add james 5432167890")
-    assert exit_status == 0
+    subprocess.run(["./phone_book", "add", "john", "1234567890"], check=True)
+    subprocess.run(["./phone_book", "add", "jack", "0987654321"], check=True)
+    subprocess.run(["./phone_book", "add", "james", "5432167890"], check=True)
 
     exit_status, op = run_cmd("./phone_book delete wick")
     assert exit_status == 1
@@ -88,32 +79,24 @@ def test_adding_deleting_nonexistent(no_db):
     assert (op == expected)
 
 def test_adding_deleting_first_list(no_db):
-    exit_status, _ = run_cmd("./phone_book add john 1234567890")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add jack 0987654321")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add james 5432167890")
-    assert exit_status == 0
+    subprocess.run(["./phone_book", "add", "john", "1234567890"], check=True)
+    subprocess.run(["./phone_book", "add", "jack", "0987654321"], check=True)
+    subprocess.run(["./phone_book", "add", "james", "5432167890"], check=True)
 
-    exit_status, op = run_cmd("./phone_book delete john")
-    assert exit_status == 0
+    subprocess.run(["./phone_book", "delete", "john"], check=True)
     exit_status, op = run_cmd("./phone_book list")
     assert exit_status == 0
     expected = """jack                 : 0987654321
 james                : 5432167890
 Total entries :  2"""
     assert (op == expected)
-    
-def test_adding_deleting_middle_list(no_db):
-    exit_status, _ = run_cmd("./phone_book add john 1234567890")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add jack 0987654321")
-    assert exit_status == 0
-    exit_status, _ = run_cmd("./phone_book add james 5432167890")
-    assert exit_status == 0
 
-    exit_status, op = run_cmd("./phone_book delete jack")
-    assert exit_status == 0
+def test_adding_deleting_middle_list(no_db):
+    subprocess.run(["./phone_book", "add", "john", "1234567890"], check=True)
+    subprocess.run(["./phone_book", "add", "jack", "0987654321"], check=True)
+    subprocess.run(["./phone_book", "add", "james", "5432167890"], check=True)
+
+    subprocess.run(["./phone_book", "delete", "jack"], check=True)
     exit_status, op = run_cmd("./phone_book list")
     assert exit_status == 0
     expected = """john                 : 1234567890
@@ -123,12 +106,11 @@ Total entries :  2"""
 
     
 def test_valgrind(no_db):
-    run_cmd("./phone_book add john 1234567890")
-    run_cmd("./phone_book add jack 0987654321")
-    run_cmd("./phone_book add james 5432167890")
+    subprocess.run(["./phone_book", "add", "john", "1234567890"], check=True)
+    subprocess.run(["./phone_book", "add", "jack", "0987654321"], check=True)
+    subprocess.run(["./phone_book", "add", "james", "5432167890"], check=True)
 
     exit_status, op = run_cmd("valgrind ./phone_book list")
     assert "All heap blocks were freed -- no leaks are possible" in op, "Memory is not being properly freed"
-    
-    
+
     
